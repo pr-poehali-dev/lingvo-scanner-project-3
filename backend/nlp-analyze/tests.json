@@ -1,0 +1,44 @@
+{
+  "tests": [
+    {
+      "name": "Analyze English text",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "The black cat eats",
+        "language": "en"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "analyzed_words": "array",
+        "text": "string",
+        "language": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get analysis history",
+      "method": "GET",
+      "path": "/?language=en&limit=5",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "history": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle empty text error",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "text": "",
+        "language": "en"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

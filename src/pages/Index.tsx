@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,19 +31,62 @@ const Index = () => {
   const [language, setLanguage] = useState<'fr' | 'en'>('fr');
   const [analyzedWords, setAnalyzedWords] = useState<AnalyzedWord[]>([]);
   const [activeTab, setActiveTab] = useState('analyzer');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadHistory();
+    }
+  }, [activeTab]);
 
   const posColors: Record<string, string> = {
     noun: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
     verb: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    adj: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     adjective: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
     adverb: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    adv: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     pronoun: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+    pron: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
     preposition: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    adp: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
     conjunction: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    cconj: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
     article: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    det: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   };
 
-  const analyzeText = () => {
+  const analyzeText = async () => {
+    if (!text.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/3cc9d2c3-5404-4f55-a50e-10deddc459a3', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text, language }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка анализа текста');
+      }
+
+      const data = await response.json();
+      setAnalyzedWords(data.analyzed_words);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const analyzeTextOld = () => {
     if (!text.trim()) return;
 
     const words = text.split(/\s+/);
@@ -164,6 +207,18 @@ const Index = () => {
     setAnalyzedWords(analyzed);
   };
 
+  const loadHistory = async () => {
+    try {
+      const response = await fetch(`https://functions.poehali.dev/3cc9d2c3-5404-4f55-a50e-10deddc459a3?language=${language}&limit=10`);
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data.history);
+      }
+    } catch (err) {
+      console.error('Failed to load history:', err);
+    }
+  };
+
   const exampleSentences = {
     fr: [
       'Le chat noir mange.',
@@ -250,9 +305,14 @@ const Index = () => {
                   onChange={(e) => setText(e.target.value)}
                   className="min-h-32 text-lg"
                 />
-                <Button onClick={analyzeText} size="lg" className="w-full" disabled={!text.trim()}>
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
+                <Button onClick={analyzeText} size="lg" className="w-full" disabled={!text.trim() || isLoading}>
                   <Icon name="Sparkles" size={20} className="mr-2" />
-                  Анализировать предложение
+                  {isLoading ? 'Анализирую...' : 'Анализировать предложение'}
                 </Button>
               </CardContent>
             </Card>
@@ -465,21 +525,63 @@ const Index = () => {
             <div className="max-w-4xl mx-auto">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon name="Clock" size={20} />
-                    История анализов
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon name="Clock" size={20} />
+                      История анализов
+                    </CardTitle>
+                    <Button variant="outline" size="sm" onClick={loadHistory}>
+                      <Icon name="RefreshCw" size={16} className="mr-2" />
+                      Обновить
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Icon name="FileSearch" size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      История анализов будет сохраняться здесь
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Начните анализировать предложения, чтобы увидеть историю
-                    </p>
-                  </div>
+                  {history.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Icon name="FileSearch" size={48} className="mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">
+                        История анализов будет сохраняться здесь
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Начните анализировать предложения, чтобы увидеть историю
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {history.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setText(item.text);
+                            setLanguage(item.language);
+                            setAnalyzedWords(item.analyzed_data);
+                            setActiveTab('analyzer');
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <span className="text-sm font-medium">{item.language === 'fr' ? '🇫🇷' : '🇬🇧'} {item.text}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.created_at).toLocaleString('ru-RU')}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {item.analyzed_data.slice(0, 5).map((word: any, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {word.word}
+                              </Badge>
+                            ))}
+                            {item.analyzed_data.length > 5 && (
+                              <Badge variant="outline" className="text-xs text-muted-foreground">
+                                +{item.analyzed_data.length - 5} еще
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
