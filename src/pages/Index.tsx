@@ -183,9 +183,11 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary">
-                <Icon name="BookOpen" className="text-primary-foreground" size={28} />
-              </div>
+              <img 
+                src="https://cdn.poehali.dev/files/IMG_20251211_114230_991.jpg" 
+                alt="ЛИНГВОСКАНЕР" 
+                className="w-12 h-12 rounded-lg object-cover"
+              />
               <div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight">ЛИНГВОСКАНЕР</h1>
                 <p className="text-sm text-muted-foreground">Открывай мир слов, расширяй горизонты</p>
@@ -489,7 +491,11 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Icon name="BookOpen" size={16} />
+              <img 
+                src="https://cdn.poehali.dev/files/IMG_20251211_114230_991.jpg" 
+                alt="ЛИНГВОСКАНЕР" 
+                className="w-6 h-6 rounded object-cover"
+              />
               <span>ЛИНГВОСКАНЕР © 2024</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
